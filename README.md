@@ -3,6 +3,8 @@ PowerShell WPF Form: Upload CSV, create mulitple Active Director Accounts, Check
 
 ![alt text](https://github.com/fabiod89/Create_AD_Accounts_GUI/blob/main/Capture.PNG)
 
+# To run the script: Right-click on the file and click on "Run with PowerShell" (Active Directory is required)
+
 # Step 1. 
 Select the CSV file by clicking on "Load CSV" (Ensure you have the proper headers "FirstName"   "LastName"    "Title" )
 
