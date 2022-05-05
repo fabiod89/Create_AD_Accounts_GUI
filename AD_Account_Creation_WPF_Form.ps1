@@ -1,4 +1,15 @@
-﻿#-------------------------------------------------------------#
+##########
+# Edit these variables, based on what you have in your requirments 
+
+#What OU would you like these accounts created in?
+$path = ""
+
+#how long would you like the mnemonic to be?
+$length = 6
+
+##########
+
+#-------------------------------------------------------------#
 # This script will create the AD accounts when uploading with an CSV
 # By: Fabio De Oliveira
 # Gui created with PoshGui.com
@@ -22,21 +33,14 @@ Add-Type -AssemblyName PresentationCore, PresentationFramework
 $Xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Width="950" Height="650">
 <Grid>
-
 <DataGrid HorizontalAlignment="Left" VerticalAlignment="Top" Width="700" Height="400" Margin="100,100,0,0" Name="DataGrid1"/>
-
 <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Active Directory Account Creation" Margin="100,10,0,0" Name="Label1"/>
-
 <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="NOTE: Every CSV requires the following Headers or you will not be able to open it" Margin="180,40,0,0" Name="Label2"/>
 <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="FirstName      LastName     Title" Margin="180,60,0,0" Name="Label3"/>
 <Button Content="Load CSV" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Margin="100,40,0,0" Name="LoadCSVButton"/>
-
 <Button Content="Create AD Accounts" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150"  Margin="100,520,0,0" Name="CreateADButton"/>
-
 <Button Content="Update Duplicate's Password" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150"  Margin="500,520,0,0" Name="UpdateDupPassword"/>
-
 <Button Content="Export CSV" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150"  Margin="100,560,0,0" Name="ExportCSVButton"/>
-
 </Grid></Window>
 "@
 
@@ -128,7 +132,8 @@ function Generate-Mnemonic ($firstname,$lastname){
     $count = 0
     $firstname = $firstname -replace '[^a-zA-Z]'
     $lastname = $lastname -replace '[^a-zA-Z]'
-    DO{ $mnemonic = ($firstname[0] + ($lastname.replace(' ' , '').Substring(0,[System.Math]::Min(6, ($lastname | Measure-Object -Character -IgnoreWhiteSpace | Select -ExpandProperty Characters))) + ("{0:D2}" -f $count | where {$_ -ne "00"}))).Tolower()
+
+    DO{ $mnemonic = ($firstname[0] + ($lastname.replace(' ' , '').Substring(0,[System.Math]::Min($length, ($lastname | Measure-Object -Character -IgnoreWhiteSpace | Select -ExpandProperty Characters))) + ("{0:D2}" -f $count | where {$_ -ne "00"}))).Tolower()
         $count++}
     UNTIL (([bool] (Get-ADUser -Filter { SamAccountName -eq $mnemonic })) -eq $False)
     return $mnemonic
@@ -154,7 +159,7 @@ function Create-AD-Accounts-Button{
         if ($row.Check -eq $true){
             if ($row.Duplicate -eq $false){
                 #Include confirmation account was created
-                Create-AD-Account ($row.FirstName) ($row.LastName) ($row.Mnemonic) ($row.Description) ($row.Password)
+                Create-AD-Account ($row.FirstName) ($row.LastName) ($row.Mnemonic) ($row.Description) ($row.Password) ($path)
             }
         }  
     }
@@ -172,7 +177,7 @@ function Update-Duplicate-Passwords{
     }
 }
 
-function Create-AD-Account ($firstname, $lastname, $mnemonic, $title, $password){
+function Create-AD-Account ($firstname, $lastname, $mnemonic, $title, $password, $path){
     New-ADUser -Name "$lastname, $firstname" `
     -displayName "$lastname, $firstname" `
     -givenName $firstname -Surname $lastname `
@@ -180,6 +185,7 @@ function Create-AD-Account ($firstname, $lastname, $mnemonic, $title, $password)
     -Description $title `
     -Title $title `
     -AccountPassword (ConvertTo-SecureString $password -AsPlainText -Force) `
+    -Path $path
     -Enabled $true
 }
 
@@ -259,4 +265,3 @@ $ExportCSVButton.Add_Click({
 #-------------------------------------------------------------#
 
 $Window.ShowDialog() | Out-Null
-
